@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ const TrainingProgress: React.FC<TrainingProgressProps> = ({
   const [speedometerAngle, setSpeedometerAngle] = useState<number>(0);
   const [speedImprovementText, setSpeedImprovementText] = useState<string>("");
   const [speedDifference, setSpeedDifference] = useState<string>("");
+  const [progressColor, setProgressColor] = useState<string>("bg-primary");
 
   useEffect(() => {
     if (isTraining) {
@@ -54,6 +56,15 @@ const TrainingProgress: React.FC<TrainingProgressProps> = ({
       
       const simulatedTime = (baseTime / speedFactor) * randomFactor;
       setEpochTime(parseFloat(simulatedTime.toFixed(1)));
+      
+      // Set progress bar color based on speed
+      if (simulatedTime < 3) {
+        setProgressColor("bg-green-500");
+      } else if (simulatedTime < 6) {
+        setProgressColor("bg-amber-500");
+      } else {
+        setProgressColor("bg-red-500");
+      }
       
       // Calculate speedometer angle (0-180 degrees)
       const epsilonRate = 1 / simulatedTime; // epochs per second
@@ -85,7 +96,7 @@ const TrainingProgress: React.FC<TrainingProgressProps> = ({
           const timesDifference = (modelParallelTime / dataParallelTime).toFixed(1);
           setSpeedDifference(`${timesDifference}x faster than Model Parallelism`);
         } else {
-          const timesDifference = (modelParallelTime / dataParallelTime).toFixed(1);
+          const timesDifference = (dataParallelTime / modelParallelTime).toFixed(1);
           setSpeedDifference(`${timesDifference}x slower than Data Parallelism`);
         }
       } else {
@@ -127,7 +138,11 @@ const TrainingProgress: React.FC<TrainingProgressProps> = ({
               <span>Epoch: {currentEpoch}/{totalEpochs}</span>
               <span>Time per epoch: <Badge variant={epochTime < 3 ? "default" : epochTime < 6 ? "outline" : "destructive"}>{epochTime}s</Badge></span>
             </div>
-            <Progress value={epochProgress} className="h-2" />
+            <Progress 
+              value={epochProgress} 
+              className="h-2" 
+              indicatorClassName={progressColor}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

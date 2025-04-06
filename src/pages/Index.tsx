@@ -188,7 +188,7 @@ const Index = () => {
       // The interval will be much smaller (faster updates) for data parallelism with more nodes
       let updateInterval = 200; // Default base interval in milliseconds
       
-      if (strategy === 'data_parallel') {
+      if (parallelismStrategy === 'data_parallel') {
         // Data parallelism gets dramatically faster with more nodes
         const healthyNodeCount = nodes.filter(n => n.status === 'healthy').length;
         // Apply a dramatic speedup effect for data parallelism
@@ -225,7 +225,7 @@ const Index = () => {
       
       return () => clearInterval(progressInterval);
     }
-  }, [isTraining, currentEpoch, recoveryInProgress, strategy, nodes]);
+  }, [isTraining, currentEpoch, recoveryInProgress, parallelismStrategy, nodes]);
   
   return (
     <div className="container mx-auto py-6">
