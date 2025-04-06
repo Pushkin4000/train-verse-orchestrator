@@ -24,13 +24,13 @@ const ParallelismStrategy: React.FC<ParallelismStrategyProps> = ({
     onStrategyChange(strategy === 'data_parallel' ? 'model_parallel' : 'data_parallel');
   };
 
-  // Calculate speed improvement and efficiency factors for both strategies
-  const dataParallelSpeedup = Math.min(nodeCount, nodeCount * 0.9).toFixed(1); // Almost linear
-  const modelParallelSpeedup = Math.max(1, Math.log2(nodeCount) * 1.2).toFixed(1); // Logarithmic
+  // Calculate speed improvement and efficiency factors for both strategies - with more dramatic differences
+  const dataParallelSpeedup = nodeCount > 0 ? Math.min(nodeCount, nodeCount * 0.95).toFixed(1) : "0.0"; // Almost linear
+  const modelParallelSpeedup = nodeCount > 0 ? Math.max(1, Math.log2(nodeCount) * 0.8).toFixed(1) : "0.0"; // Logarithmic (worse)
   
   // Calculate efficiency (speedup/nodes)
-  const dataParallelEfficiency = ((parseFloat(dataParallelSpeedup) / nodeCount) * 100).toFixed(0);
-  const modelParallelEfficiency = ((parseFloat(modelParallelSpeedup) / nodeCount) * 100).toFixed(0);
+  const dataParallelEfficiency = nodeCount > 0 ? ((parseFloat(dataParallelSpeedup) / nodeCount) * 100).toFixed(0) : "0";
+  const modelParallelEfficiency = nodeCount > 0 ? ((parseFloat(modelParallelSpeedup) / nodeCount) * 100).toFixed(0) : "0";
 
   return (
     <Card>
@@ -75,7 +75,7 @@ const ParallelismStrategy: React.FC<ParallelismStrategyProps> = ({
               <ul className="space-y-1 text-xs">
                 <li className="flex justify-between">
                   <span>Speed boost:</span>
-                  <span className="font-medium">{dataParallelSpeedup}x faster</span>
+                  <span className="font-medium text-green-600">{dataParallelSpeedup}x faster</span>
                 </li>
                 <li className="flex justify-between">
                   <span>Scaling efficiency:</span>
@@ -95,7 +95,7 @@ const ParallelismStrategy: React.FC<ParallelismStrategyProps> = ({
               <ul className="space-y-1 text-xs">
                 <li className="flex justify-between">
                   <span>Speed boost:</span>
-                  <span className="font-medium">{modelParallelSpeedup}x faster</span>
+                  <span className="font-medium text-amber-600">{modelParallelSpeedup}x faster</span>
                 </li>
                 <li className="flex justify-between">
                   <span>Scaling efficiency:</span>
@@ -108,17 +108,17 @@ const ParallelismStrategy: React.FC<ParallelismStrategyProps> = ({
             </div>
           </div>
 
-          <div className="bg-blue-50 text-blue-700 p-3 rounded-md space-y-1 text-sm">
-            <h4 className="font-medium">Key Insight:</h4>
+          <div className={`${strategy === 'data_parallel' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'} p-3 rounded-md space-y-1 text-sm`}>
+            <h4 className="font-medium">Real-time Insight:</h4>
             <p className="text-xs">
               {nodeCount > 1
                 ? `With ${nodeCount} nodes, Data Parallelism is ${(parseFloat(dataParallelSpeedup) / parseFloat(modelParallelSpeedup)).toFixed(1)}x faster than Model Parallelism for small models`
-                : "Add more nodes to see performance comparisons between strategies"}
+                : "Add more nodes to see dramatic performance differences between strategies"}
             </p>
             <p className="text-xs">
               {strategy === 'data_parallel' 
-                ? "Each additional node in Data Parallelism adds almost linear speedup until communication bottlenecks occur"
-                : "Model Parallelism improves with more nodes but has diminishing returns due to layer dependencies"}
+                ? "Data Parallelism: Each new node adds almost linear speedup until communication overhead occurs"
+                : "Model Parallelism: Limited by sequential processing - additional nodes provide minimal benefit"}
             </p>
           </div>
         </div>

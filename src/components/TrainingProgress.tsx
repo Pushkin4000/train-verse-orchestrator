@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Play, Square, RotateCw, Info } from 'lucide-react';
 import { EpochData } from '@/data/simulationData';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 
 interface TrainingProgressProps {
   isTraining: boolean;
@@ -33,40 +33,63 @@ const TrainingProgress: React.FC<TrainingProgressProps> = ({
   const [epochTime, setEpochTime] = useState<number>(0);
   const [speedometerAngle, setSpeedometerAngle] = useState<number>(0);
   const [speedImprovementText, setSpeedImprovementText] = useState<string>("");
+  const [speedDifference, setSpeedDifference] = useState<string>("");
 
   useEffect(() => {
     if (isTraining) {
-      // Calculate simulated epoch time based on strategy and node count
-      let baseTime = 5.0; // Starting time in seconds
+      // Dramatically different base times for strategies
+      let baseTime = 10.0; // Starting time in seconds - much slower default
       let speedFactor = 1;
       
       if (strategy === 'data_parallel') {
-        // Data parallel scales much better with node count
-        speedFactor = Math.min(nodeCount, nodeCount * 0.9); // Almost linear scaling
+        // Data parallel scales much better with node count - almost linear
+        speedFactor = Math.min(nodeCount * 0.95, nodeCount); // Nearly linear scaling
       } else {
-        // Model parallel has diminishing returns
-        speedFactor = Math.max(1, Math.log2(nodeCount) * 1.2);
+        // Model parallel has severe diminishing returns
+        speedFactor = Math.max(1, Math.log2(nodeCount) * 0.8); // Much worse scaling
       }
       
-      // Add some randomness to make it feel realistic
-      const randomFactor = 0.9 + Math.random() * 0.2; // Between 0.9 and 1.1
+      // Add minimal randomness to make it feel realistic but keep differences clear
+      const randomFactor = 0.95 + Math.random() * 0.1; // Between 0.95 and 1.05
       
       const simulatedTime = (baseTime / speedFactor) * randomFactor;
       setEpochTime(parseFloat(simulatedTime.toFixed(1)));
       
       // Calculate speedometer angle (0-180 degrees)
       const epsilonRate = 1 / simulatedTime; // epochs per second
-      const maxRate = 5; // 5 epochs per second is max on our speedometer
+      const maxRate = 2; // 2 epochs per second is max on our speedometer (adjusted to show bigger difference)
       const angle = Math.min(180, (epsilonRate / maxRate) * 180);
       setSpeedometerAngle(angle);
       
-      // Set the speed improvement text
+      // Set the speed improvement text - make improvements more dramatic
       if (nodeCount > 1) {
         const improvementFactor = baseTime / simulatedTime;
         const improvementPercent = ((improvementFactor - 1) * 100).toFixed(0);
-        setSpeedImprovementText(`${nodeCount} nodes = ${improvementPercent}% speed improvement`);
+        
+        if (strategy === 'data_parallel') {
+          setSpeedImprovementText(`${nodeCount} nodes = ${improvementPercent}% speed boost!`);
+        } else {
+          // For model parallel, show less dramatic improvements
+          setSpeedImprovementText(`${nodeCount} nodes = ${improvementPercent}% improvement`);
+        }
       } else {
         setSpeedImprovementText("Add more nodes to increase speed");
+      }
+
+      // Add comparison between strategies
+      if (nodeCount > 1) {
+        const dataParallelTime = baseTime / (nodeCount * 0.95);
+        const modelParallelTime = baseTime / (Math.log2(nodeCount) * 0.8);
+        
+        if (strategy === 'data_parallel') {
+          const timesDifference = (modelParallelTime / dataParallelTime).toFixed(1);
+          setSpeedDifference(`${timesDifference}x faster than Model Parallelism`);
+        } else {
+          const timesDifference = (modelParallelTime / dataParallelTime).toFixed(1);
+          setSpeedDifference(`${timesDifference}x slower than Data Parallelism`);
+        }
+      } else {
+        setSpeedDifference("");
       }
     }
   }, [isTraining, strategy, nodeCount, currentEpoch]);
@@ -102,7 +125,7 @@ const TrainingProgress: React.FC<TrainingProgressProps> = ({
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Epoch: {currentEpoch}/{totalEpochs}</span>
-              <span>Time per epoch: {epochTime}s</span>
+              <span>Time per epoch: <Badge variant={epochTime < 3 ? "success" : epochTime < 6 ? "default" : "destructive"}>{epochTime}s</Badge></span>
             </div>
             <Progress value={epochProgress} className="h-2" />
           </div>
@@ -120,8 +143,8 @@ const TrainingProgress: React.FC<TrainingProgressProps> = ({
                   <TooltipContent>
                     <p className="max-w-xs">
                       {strategy === 'data_parallel' 
-                        ? "Data Parallelism scales almost linearly with node count for most workloads" 
-                        : "Model Parallelism has communication overhead that limits scaling"}
+                        ? "Data Parallelism scales almost linearly with node count, dramatically reducing training time" 
+                        : "Model Parallelism has severe communication overhead that greatly limits scaling"}
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -132,12 +155,17 @@ const TrainingProgress: React.FC<TrainingProgressProps> = ({
                   style={{ transform: `rotate(${speedometerAngle}deg)` }}
                 ></div>
                 <div className="absolute inset-0 flex flex-col items-center justify-end pb-2">
-                  <div className="text-xs font-mono">
+                  <div className="text-sm font-mono">
                     {epochTime ? (1 / epochTime).toFixed(1) : '0'} ep/s
                   </div>
                   <div className="text-xs font-medium mt-1 text-accent">
                     {speedImprovementText}
                   </div>
+                  {speedDifference && (
+                    <div className={`text-xs font-medium mt-1 ${strategy === 'data_parallel' ? 'text-green-600' : 'text-amber-600'}`}>
+                      {speedDifference}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -158,6 +186,18 @@ const TrainingProgress: React.FC<TrainingProgressProps> = ({
                   <span className="font-mono">{strategy === 'data_parallel' ? 32 * nodeCount : 32}</span>
                 </div>
               </div>
+              
+              {isTraining && strategy === 'data_parallel' && nodeCount > 1 && (
+                <div className="bg-green-50 text-green-700 p-2 rounded-md text-xs">
+                  Effective speedup: Nearly {nodeCount}x with {nodeCount} nodes!
+                </div>
+              )}
+              
+              {isTraining && strategy === 'model_parallel' && nodeCount > 1 && (
+                <div className="bg-yellow-50 text-yellow-700 p-2 rounded-md text-xs">
+                  Limited speedup: Only {Math.log2(nodeCount).toFixed(1)}x with {nodeCount} nodes due to communication overhead
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -12,6 +12,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  ReferenceLine,
 } from "recharts";
 
 interface MetricsGraphProps {
@@ -38,9 +39,30 @@ const MetricsGraph: React.FC<MetricsGraphProps> = ({
     );
   };
 
+  // Format data for the current strategy
   const lossData = formatData("loss");
   const accuracyData = formatData("accuracy");
   const epochTimeData = formatData("epoch_time");
+  
+  // Create comparison data for strategy comparison
+  const getComparisonData = (dataKey: keyof ParallelismData[keyof ParallelismData]) => {
+    // Get data for both strategies
+    const dpData = data.data_parallel[dataKey];
+    const mpData = data.model_parallel[dataKey];
+    
+    if (!dpData || !mpData) return [];
+    
+    return Array.from(
+      { length: Math.min(currentEpoch, dpData.length, mpData.length) },
+      (_, i) => ({
+        epoch: i + 1,
+        dataParallel: dpData[i],
+        modelParallel: mpData[i],
+      })
+    );
+  };
+  
+  const epochTimeComparisonData = getComparisonData("epoch_time");
 
   return (
     <Card className="h-full">
@@ -49,10 +71,11 @@ const MetricsGraph: React.FC<MetricsGraphProps> = ({
       </CardHeader>
       <CardContent className="pt-2">
         <Tabs defaultValue="loss">
-          <TabsList className="grid grid-cols-3 mb-4">
+          <TabsList className="grid grid-cols-4 mb-4">
             <TabsTrigger value="loss">Loss</TabsTrigger>
             <TabsTrigger value="accuracy">Accuracy</TabsTrigger>
             <TabsTrigger value="epoch-time">Epoch Time</TabsTrigger>
+            <TabsTrigger value="comparison">Strategy Comparison</TabsTrigger>
           </TabsList>
           <TabsContent value="loss" className="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -113,6 +136,45 @@ const MetricsGraph: React.FC<MetricsGraphProps> = ({
                 />
               </LineChart>
             </ResponsiveContainer>
+          </TabsContent>
+          <TabsContent value="comparison" className="h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={epochTimeComparisonData}
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="epoch" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="dataParallel"
+                  stroke="#4ade80"
+                  name="Data Parallel"
+                  animationDuration={300}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="modelParallel"
+                  stroke="#f97316"
+                  name="Model Parallel"
+                  animationDuration={300}
+                />
+                {currentEpoch > 0 && (
+                  <ReferenceLine 
+                    x={currentEpoch} 
+                    stroke="red" 
+                    strokeDasharray="3 3"
+                    label="Current" 
+                  />
+                )}
+              </LineChart>
+            </ResponsiveContainer>
+            <div className="mt-2 text-xs text-center">
+              <span className="text-green-600 font-medium">Data Parallel</span> vs <span className="text-orange-600 font-medium">Model Parallel</span> epoch time comparison
+            </div>
           </TabsContent>
         </Tabs>
       </CardContent>

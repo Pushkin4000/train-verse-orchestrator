@@ -17,13 +17,22 @@ const GradientVisualizer: React.FC<GradientVisualizerProps> = ({
 }) => {
   const [triggerSync, setTriggerSync] = useState(0);
   const [syncFactor, setSyncFactor] = useState<string>("0%");
+  const [communicationWarning, setCommunicationWarning] = useState<string>("");
 
   useEffect(() => {
     if (isTraining && strategy === 'data_parallel') {
-      // Calculate communication overhead based on node count
+      // Calculate communication overhead based on node count - make it more dramatic
       const healthyNodeCount = nodes.filter(n => n.status === 'healthy').length;
-      const overhead = Math.min(99, healthyNodeCount * 5); // More nodes = more sync overhead
+      // More aggressive overhead scale - quadratic growth with node count
+      const overhead = Math.min(99, healthyNodeCount * healthyNodeCount * 2.5); 
       setSyncFactor(`${overhead}%`);
+      
+      // Set warning based on node count
+      if (healthyNodeCount > 4) {
+        setCommunicationWarning(`High communication overhead with ${healthyNodeCount} nodes!`);
+      } else {
+        setCommunicationWarning("");
+      }
       
       // Trigger gradient sync animation periodically
       const interval = setInterval(() => {
@@ -102,8 +111,15 @@ const GradientVisualizer: React.FC<GradientVisualizerProps> = ({
                   </div>
                   <div className="flex justify-between">
                     <span>Communication overhead</span>
-                    <span className="font-medium">{syncFactor}</span>
+                    <span className={`font-medium ${parseFloat(syncFactor) > 50 ? 'text-red-600' : 'text-amber-600'}`}>
+                      {syncFactor}
+                    </span>
                   </div>
+                  {communicationWarning && (
+                    <div className="text-red-600 font-medium mt-1">
+                      ⚠️ {communicationWarning}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -138,8 +154,13 @@ const GradientVisualizer: React.FC<GradientVisualizerProps> = ({
                 </div>
                 <div className="flex justify-between">
                   <span>Layer transition overhead</span>
-                  <span className="font-medium">+{Math.min(90, nodes.length * 10)}% latency</span>
+                  <span className="font-medium text-red-600">+{Math.min(95, nodes.length * 20)}% latency</span>
                 </div>
+                {nodes.length > 2 && (
+                  <div className="text-red-600 font-medium mt-1">
+                    ⚠️ Sequential bottleneck limits speedup!
+                  </div>
+                )}
               </div>
             )}
           </div>

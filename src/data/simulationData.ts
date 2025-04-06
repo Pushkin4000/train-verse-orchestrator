@@ -32,14 +32,15 @@ export interface NodeData {
   status: 'healthy' | 'failed' | 'recovering';
 }
 
+// Significantly increased contrast between strategies
 export const epochProgress: ParallelismData = {
   data_parallel: {
-    epoch_time: [5.0, 2.5, 1.2, 0.8, 0.5, 0.4, 0.35, 0.33, 0.32, 0.31], // Much faster reduction
+    epoch_time: [10.0, 5.0, 2.5, 1.2, 0.8, 0.5, 0.4, 0.35, 0.33, 0.32], // Much faster reduction
     loss: [2.1, 1.3, 0.7, 0.5, 0.4, 0.35, 0.3, 0.28, 0.26, 0.25],
     accuracy: [0.45, 0.65, 0.78, 0.82, 0.85, 0.87, 0.89, 0.9, 0.91, 0.92]
   },
   model_parallel: {
-    epoch_time: [5.0, 3.2, 2.4, 1.8, 1.5, 1.3, 1.2, 1.1, 1.05, 1.0], // Slower reduction
+    epoch_time: [10.0, 8.5, 7.2, 6.5, 6.0, 5.7, 5.5, 5.3, 5.2, 5.1], // Much slower reduction
     loss: [2.1, 1.5, 0.9, 0.7, 0.6, 0.55, 0.5, 0.48, 0.46, 0.45],
     accuracy: [0.4, 0.6, 0.72, 0.77, 0.81, 0.84, 0.86, 0.87, 0.88, 0.89]
   }
@@ -140,19 +141,19 @@ export const recoveryTimes = {
 export const tutorials = [
   {
     title: "Build Your Cluster",
-    content: "Drag and drop GPU nodes to build your training cluster. More nodes can increase training speed, but watch out for diminishing returns and increased costs!"
+    content: "Drag and drop GPU nodes to build your training cluster. More nodes dramatically increase training speed with Data Parallelism, but have less impact with Model Parallelism!"
   },
   {
     title: "Choose Parallelism Strategy",
-    content: "Data Parallelism splits data across nodes and is best for smaller models. Model Parallelism splits the model itself and works better for very large models that don't fit on a single GPU."
+    content: "Data Parallelism offers nearly linear speedup with more nodes. Model Parallelism has significant communication overhead and results in slower training as models are split across nodes."
   },
   {
     title: "Start Training",
-    content: "Click 'Start Training' to begin the simulation. Watch as your model trains across the cluster and metrics update in real-time."
+    content: "Click 'Start Training' to begin the simulation. Watch as your model trains across the cluster and metrics update in real-time. Notice how training speed varies dramatically with different configurations!"
   },
   {
     title: "Test Fault Tolerance",
-    content: "Try killing a node to see how the system recovers. Training will pause, restore from a checkpoint, and continue with the remaining nodes."
+    content: "Try killing a node to see how the system recovers. Training will pause, restore from a checkpoint, and continue with the remaining nodes. Observe how recovery time affects overall training progress."
   }
 ];
 
