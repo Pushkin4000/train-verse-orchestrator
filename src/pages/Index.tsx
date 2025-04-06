@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -59,7 +60,7 @@ const Index = () => {
         bandwidth: 10,
         latency: 5 + Math.floor(Math.random() * 5)
       },
-      status: "healthy"
+      status: "healthy" as const
     };
     
     setNodes([...nodes, newNode]);
@@ -82,7 +83,7 @@ const Index = () => {
   // Kill a node during training to simulate failure
   const handleKillNode = (id: number) => {
     const updatedNodes = nodes.map(node => 
-      node.id === id ? { ...node, status: 'failed' } : node
+      node.id === id ? { ...node, status: 'failed' as const } : node
     );
     
     setNodes(updatedNodes);
@@ -99,7 +100,7 @@ const Index = () => {
         // Update the node status to recovering
         setNodes(prevNodes => 
           prevNodes.map(node => 
-            node.id === id ? { ...node, status: 'recovering' } : node
+            node.id === id ? { ...node, status: 'recovering' as const } : node
           )
         );
         
@@ -116,7 +117,7 @@ const Index = () => {
         setTimeout(() => {
           setNodes(prevNodes => 
             prevNodes.map(node => 
-              node.id === id ? { ...node, status: 'healthy' } : node
+              node.id === id ? { ...node, status: 'healthy' as const } : node
             )
           );
           showNotification(`Node ${id} recovered and rejoined the cluster`, 'success');

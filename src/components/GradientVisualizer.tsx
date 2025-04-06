@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NodeData } from '@/data/simulationData';
+import { Badge } from "@/components/ui/badge";
 
 interface GradientVisualizerProps {
   nodes: NodeData[];
@@ -15,9 +16,15 @@ const GradientVisualizer: React.FC<GradientVisualizerProps> = ({
   strategy
 }) => {
   const [triggerSync, setTriggerSync] = useState(0);
+  const [syncFactor, setSyncFactor] = useState<string>("0%");
 
   useEffect(() => {
     if (isTraining && strategy === 'data_parallel') {
+      // Calculate communication overhead based on node count
+      const healthyNodeCount = nodes.filter(n => n.status === 'healthy').length;
+      const overhead = Math.min(99, healthyNodeCount * 5); // More nodes = more sync overhead
+      setSyncFactor(`${overhead}%`);
+      
       // Trigger gradient sync animation periodically
       const interval = setInterval(() => {
         setTriggerSync(prev => prev + 1);
@@ -25,7 +32,7 @@ const GradientVisualizer: React.FC<GradientVisualizerProps> = ({
       
       return () => clearInterval(interval);
     }
-  }, [isTraining, strategy]);
+  }, [isTraining, strategy, nodes]);
 
   return (
     <Card>
@@ -33,6 +40,7 @@ const GradientVisualizer: React.FC<GradientVisualizerProps> = ({
         <CardTitle className="text-xl font-semibold">
           {strategy === 'data_parallel' ? 'Gradient Synchronization' : 'Model Partitioning'}
         </CardTitle>
+        <Badge variant={isTraining ? "default" : "outline"}>{isTraining ? "ACTIVE" : "READY"}</Badge>
       </CardHeader>
       <CardContent className="relative min-h-[180px]">
         {strategy === 'data_parallel' ? (
@@ -54,7 +62,8 @@ const GradientVisualizer: React.FC<GradientVisualizerProps> = ({
                 <React.Fragment key={node.id}>
                   <div 
                     className={`absolute w-8 h-8 rounded-md flex items-center justify-center ${
-                      node.status === 'failed' ? 'bg-red-400' : 'bg-primary'
+                      node.status === 'failed' ? 'bg-red-400' : 
+                      node.status === 'recovering' ? 'bg-yellow-400' : 'bg-primary'
                     }`}
                     style={{
                       left: `${x}%`,
@@ -85,10 +94,17 @@ const GradientVisualizer: React.FC<GradientVisualizerProps> = ({
             })}
             
             {isTraining && (
-              <div className="absolute bottom-0 left-0 right-0 text-center text-sm text-muted-foreground">
-                {strategy === 'data_parallel' ? 
-                  "Gradients are being synchronized across nodes" : 
-                  "Model layers are distributed across nodes"}
+              <div className="absolute bottom-0 left-0 right-0 text-xs">
+                <div className="bg-secondary p-2 rounded-md mx-4 my-2">
+                  <div className="flex justify-between mb-1">
+                    <span>Gradients synchronized across nodes</span>
+                    <span className="font-medium">Every batch</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Communication overhead</span>
+                    <span className="font-medium">{syncFactor}</span>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -100,7 +116,8 @@ const GradientVisualizer: React.FC<GradientVisualizerProps> = ({
                 <div 
                   key={node.id} 
                   className={`h-24 flex-1 mx-1 rounded-md flex flex-col items-center justify-center border-2 ${
-                    node.status === 'failed' ? 'border-red-400 bg-red-50' : 'border-primary bg-primary/10'
+                    node.status === 'failed' ? 'border-red-400 bg-red-50' : 
+                    node.status === 'recovering' ? 'border-yellow-400 bg-yellow-50' : 'border-primary bg-primary/10'
                   }`}
                 >
                   <div className="text-xs font-medium mb-1">Node {node.id}</div>
@@ -114,8 +131,15 @@ const GradientVisualizer: React.FC<GradientVisualizerProps> = ({
             </div>
             
             {isTraining && (
-              <div className="text-center text-sm text-muted-foreground">
-                Data flows through model layers distributed across nodes
+              <div className="bg-secondary p-2 rounded-md mx-4 my-2 text-xs">
+                <div className="flex justify-between mb-1">
+                  <span>Sequential processing through layers</span>
+                  <span className="font-medium">Linear path</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Layer transition overhead</span>
+                  <span className="font-medium">+{Math.min(90, nodes.length * 10)}% latency</span>
+                </div>
               </div>
             )}
           </div>
