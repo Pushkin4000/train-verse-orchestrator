@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,7 +11,7 @@ import GradientVisualizer from '@/components/GradientVisualizer';
 import TutorialOverlay from '@/components/TutorialOverlay';
 import ConceptInfoModal from '@/components/ConceptInfoModal';
 import Notification from '@/components/Notification';
-import { defaultNodes, epochProgress, NodeData, conceptInfo } from '@/data/simulationData';
+import { defaultNodes, epochProgress, NodeData, conceptInfo, tutorials } from '@/data/simulationData';
 import { Info, HelpCircle, Terminal } from 'lucide-react';
 
 const MAX_NODES = 16;
