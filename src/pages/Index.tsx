@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -185,6 +184,22 @@ const Index = () => {
   // Training simulation loop
   useEffect(() => {
     if (isTraining && !recoveryInProgress) {
+      // Calculate base update interval - this makes the difference in speed very noticeable
+      // The interval will be much smaller (faster updates) for data parallelism with more nodes
+      let updateInterval = 200; // Default base interval in milliseconds
+      
+      if (strategy === 'data_parallel') {
+        // Data parallelism gets dramatically faster with more nodes
+        const healthyNodeCount = nodes.filter(n => n.status === 'healthy').length;
+        // Apply a dramatic speedup effect for data parallelism
+        updateInterval = Math.max(25, 200 / (healthyNodeCount || 1));
+      } else {
+        // Model parallelism doesn't benefit much from more nodes
+        const healthyNodeCount = nodes.filter(n => n.status === 'healthy').length;
+        // Apply a very modest speedup effect for model parallelism
+        updateInterval = Math.max(150, 200 - (healthyNodeCount * 5));
+      }
+      
       const progressInterval = setInterval(() => {
         setEpochProgressPercent(prev => {
           if (prev >= 100) {
@@ -201,13 +216,16 @@ const Index = () => {
             });
             return 0;
           }
-          return prev + 5; // Increment progress by 5%
+          // Use a progress increment that matches the interval for consistent epoch time
+          // 5% increment at 200ms = 4 seconds per epoch, scale accordingly
+          const increment = 5 * (200 / updateInterval);
+          return prev + increment; 
         });
-      }, 200);
+      }, updateInterval);
       
       return () => clearInterval(progressInterval);
     }
-  }, [isTraining, currentEpoch, recoveryInProgress]);
+  }, [isTraining, currentEpoch, recoveryInProgress, strategy, nodes]);
   
   return (
     <div className="container mx-auto py-6">

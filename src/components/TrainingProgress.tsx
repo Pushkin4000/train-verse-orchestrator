@@ -125,7 +125,7 @@ const TrainingProgress: React.FC<TrainingProgressProps> = ({
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Epoch: {currentEpoch}/{totalEpochs}</span>
-              <span>Time per epoch: <Badge variant={epochTime < 3 ? "success" : epochTime < 6 ? "default" : "destructive"}>{epochTime}s</Badge></span>
+              <span>Time per epoch: <Badge variant={epochTime < 3 ? "default" : epochTime < 6 ? "outline" : "destructive"}>{epochTime}s</Badge></span>
             </div>
             <Progress value={epochProgress} className="h-2" />
           </div>
